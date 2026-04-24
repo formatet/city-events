@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+venv/
+.venv/
+backend/logs/
+web/static/events.json
+web/static/events.csv
+
+# Internal/deployment docs – not part of the public template
+CLAUDE.md
+OVERVIEW.md
+CHANGELOG.md
+SCRAPERS.md
+
+# Real scrapers – keep private, only example scrapers are public
+backend/scrapers/scrape_*_db.py
+!backend/scrapers/scrape_example_*_db.py
+
+# Editor/AI assistant settings
+.claude/
+live/

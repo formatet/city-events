@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-weight: 500;
+    }
+    input, select, textarea {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    button {
+      padding: 0.75rem 1.5rem;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    button:hover {
+      background: #333;
+    }
+    .message {
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .hint {
+      font-size: 0.875rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <button id="pride-btn" title="Pride mode" onclick="cyclePride()" style="
+    position: fixed; top: 1rem; right: 1rem;
+    font-size: 2rem; line-height: 1;
+    background: none; border: none; cursor: pointer;
+    filter: grayscale(1); opacity: 0.4;
+    transition: filter 0.3s, opacity 0.3s, transform 0.3s;
+    z-index: 999;
+  ">🪩</button>
+  <div id="pride-label" style="
+    position: fixed; top: 4rem; right: 0.8rem;
+    font-size: 0.65rem; text-align: center;
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  "></div>
+
+  <h1>🔮 Add manual event</h1>
+
+  <div id="message"></div>
+
+  <form id="eventForm">
+    <label>
+      Title *
+      <input type="text" name="title" required placeholder="e.g. The Cure">
+    </label>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <label>
+        Date *
+        <input type="date" name="event_date" required>
+        <span class="hint">Year-Month-Day</span>
+      </label>
+
+      <label>
+        Time *
+        <input type="time" name="event_time" required>
+        <span class="hint">24-hour format (e.g. 19:00)</span>
+      </label>
+    </div>
+
+    <label>
+      Venue *
+      <input type="text" name="venue" required placeholder="e.g. City Theatre">
+    </label>
+
+    <label>
+      Category *
+      <select name="category" required>
+        <option value="">-- Select category --</option>
+        <option value="Film">Film</option>
+        <option value="Teater">Teater</option>
+        <option value="Musikal">Musikal</option>
+        <option value="Opera">Opera</option>
+        <option value="Dans">Dans</option>
+        <option value="Musik">Musik</option>
+        <option value="Standup">Standup</option>
+        <option value="Klubb">Klubb</option>
+        <option value="Barn">Barn</option>
+        <option value="Samtal">Samtal</option>
+        <option value="Poesi">Poesi</option>
+        <option value="Vernissage">Vernissage</option>
+        <option value="Bildkonst">Bildkonst</option>
+        <option value="Övrigt">Övrigt</option>
+      </select>
+    </label>
+
+    <label>
+      Link
+      <input type="url" name="link" placeholder="https://...">
+      <span class="hint">URL to event page (optional)</span>
+    </label>
+
+    <label>
+      Source
+      <input type="text" name="source" placeholder="e.g. Film Festival, Manual">
+      <span class="hint">Where does this event come from? (optional)</span>
+    </label>
+
+    <label>
+      Description
+      <textarea name="description" placeholder="Extra info..."></textarea>
+    </label>
+
+    <label>
+      Highlight
+      <select name="highlight">
+        <option value="">None</option>
+        <option value="leftborder">Left border (gold)</option>
+        <option value="background">Background tint (gold)</option>
+      </select>
+      <span class="hint">Visual marking in the calendar (optional)</span>
+    </label>
+
+    <div>
+      <span style="font-weight: 500; display: block; margin-bottom: 0.25rem;">Crystal colour</span>
+      <div id="crystal-colors" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <button type="button" class="crystal-swatch" data-color="" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:transparent;cursor:pointer;" title="None (default)">✕</button>
+        <button type="button" class="crystal-swatch" data-color="#bef2ff" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#bef2ff;cursor:pointer;" title="#bef2ff – ice blue"></button>
+        <button type="button" class="crystal-swatch" data-color="#a8d8f0" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#a8d8f0;cursor:pointer;" title="#a8d8f0 – sky blue"></button>
+        <button type="button" class="crystal-swatch" data-color="#c5f0e0" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#c5f0e0;cursor:pointer;" title="#c5f0e0 – mint"></button>
+        <button type="button" class="crystal-swatch" data-color="#d4eaff" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#d4eaff;cursor:pointer;" title="#d4eaff – lavender blue"></button>
+        <button type="button" class="crystal-swatch" data-color="#e8d5f5" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#e8d5f5;cursor:pointer;" title="#e8d5f5 – lilac"></button>
+        <button type="button" class="crystal-swatch" data-color="#ffd6e0" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#ffd6e0;cursor:pointer;" title="#ffd6e0 – rose"></button>
+        <button type="button" class="crystal-swatch" data-color="#ffebc8" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#ffebc8;cursor:pointer;" title="#ffebc8 – gold"></button>
+        <button type="button" class="crystal-swatch" data-color="#d4f5c8" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#d4f5c8;cursor:pointer;" title="#d4f5c8 – light green"></button>
+        <button type="button" class="crystal-swatch" data-color="#ffe8d6" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#ffe8d6;cursor:pointer;" title="#ffe8d6 – peach"></button>
+        <button type="button" class="crystal-swatch" data-color="#f0f0f0" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#f0f0f0;cursor:pointer;" title="#f0f0f0 – white/silver"></button>
+        <button type="button" class="crystal-swatch" data-color="#c8e8d0" style="width:2rem;height:2rem;border-radius:4px;border:2px solid #ccc;background:#c8e8d0;cursor:pointer;" title="#c8e8d0 – sage"></button>
+      </div>
+      <input type="hidden" name="crystal_color" value="">
+      <span class="hint">Colour of the crystal icon (optional)</span>
+    </div>
+
+    <input type="hidden" name="id" value="">
+    <button type="submit" id="submitBtn">Save event</button>
+    <button type="button" id="cancelBtn" style="display: none; background: #666;">Cancel</button>
+  </form>
+
+  <hr style="margin: 3rem 0; border: none; border-top: 1px solid #ddd;">
+
+  <h2 style="font-size: 1.25rem; margin-bottom: 1rem;">Manual events</h2>
+  <div id="eventsList" style="display: flex; flex-direction: column; gap: 1rem;">
+    <p style="color: #666;">Loading...</p>
+  </div>
+
+  <script>
+    const API = `${window.location.origin}/api/admin`;
+
+    const form = document.getElementById('eventForm');
+    const messageDiv = document.getElementById('message');
+    const submitBtn = document.getElementById('submitBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const eventsListDiv = document.getElementById('eventsList');
+    let editingId = null;
+
+    let prideMode = 'off';
+    const prideBtn = document.getElementById('pride-btn');
+    const prideLabel = document.getElementById('pride-label');
+
+    async function loadPrideState() {
+      const r = await fetch('/api/pride').catch(() => null);
+      if (!r) return;
+      const d = await r.json();
+      prideMode = d.mode || 'off';
+      updatePrideBtn();
+    }
+
+    function updatePrideBtn() {
+      if (prideMode === 'pastel') {
+        prideBtn.style.filter = 'none';
+        prideBtn.style.opacity = '1';
+        prideBtn.style.transform = 'rotate(20deg)';
+        prideLabel.textContent = 'Pride ON';
+        prideLabel.style.opacity = '1';
+      } else {
+        prideBtn.style.filter = 'grayscale(1)';
+        prideBtn.style.opacity = '0.4';
+        prideBtn.style.transform = 'none';
+        prideLabel.textContent = '';
+        prideLabel.style.opacity = '0';
+      }
+    }
+
+    window.cyclePride = async function() {
+      prideMode = prideMode === 'off' ? 'pastel' : 'off';
+      updatePrideBtn();
+      await fetch('/api/admin/pride', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: prideMode })
+      });
+    };
+
+    loadPrideState();
+
+    function initSwatches() {
+      const swatches = document.querySelectorAll('.crystal-swatch');
+      const colorInput = document.querySelector('[name="crystal_color"]');
+      swatches.forEach(btn => {
+        btn.addEventListener('click', () => {
+          swatches.forEach(b => b.style.outline = 'none');
+          btn.style.outline = '3px solid #000';
+          colorInput.value = btn.dataset.color;
+        });
+      });
+    }
+    function setSwatchValue(color) {
+      const swatches = document.querySelectorAll('.crystal-swatch');
+      const colorInput = document.querySelector('[name="crystal_color"]');
+      swatches.forEach(b => b.style.outline = 'none');
+      swatches.forEach(b => {
+        if (b.dataset.color === (color || '')) b.style.outline = '3px solid #000';
+      });
+      colorInput.value = color || '';
+    }
+    initSwatches();
+    setSwatchValue('');
+
+    loadManualEvents();
+
+    async function loadManualEvents() {
+      try {
+        const response = await fetch(`${API}/events`);
+        const events = await response.json();
+
+        if (events.length === 0) {
+          eventsListDiv.innerHTML = '<p style="color: #666;">No manual events yet.</p>';
+          return;
+        }
+
+        eventsListDiv.innerHTML = events.map(event => {
+          const date = new Date(event.date);
+          const dateStr = date.toLocaleString('en-GB', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+
+          return `
+            <div style="border: 1px solid #ddd; padding: 1rem; border-radius: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                <div style="flex: 1;">
+                  <strong>${event.title}</strong><br>
+                  <span style="color: #666; font-size: 0.875rem;">
+                    ${dateStr} • ${event.venue} • ${event.category}${event.highlight ? ` • ${{'leftborder':'Left border','background':'Background'}[event.highlight] || event.highlight}` : ''}${event.crystal_color ? ` • <span style="display:inline-block;width:0.8em;height:0.8em;background:${event.crystal_color};border:1px solid #999;border-radius:2px;vertical-align:middle;"></span>` : ''}
+                  </span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button onclick="editEvent(${event.id})" style="padding: 0.5rem 1rem; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">Edit</button>
+                  <button onclick="deleteEvent(${event.id}, '${event.title.replace(/'/g, "\\'")} ')" style="padding: 0.5rem 1rem; background: #dc3545; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">Delete</button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        eventsListDiv.innerHTML = `<p style="color: #dc3545;">Error loading events: ${error.message}</p>`;
+      }
+    }
+
+    window.editEvent = async function(id) {
+      try {
+        const response = await fetch(`${API}/events/${id}`);
+        const event = await response.json();
+
+        form.querySelector('[name="title"]').value = event.title;
+        form.querySelector('[name="venue"]').value = event.venue;
+        form.querySelector('[name="category"]').value = event.category;
+        form.querySelector('[name="link"]').value = event.link || '';
+        form.querySelector('[name="source"]').value = event.source || '';
+        form.querySelector('[name="description"]').value = event.description || '';
+        form.querySelector('[name="highlight"]').value = event.highlight || '';
+        setSwatchValue(event.crystal_color || '');
+        form.querySelector('[name="id"]').value = event.id;
+
+        const date = new Date(event.date);
+        const dateStr = date.toISOString().slice(0, 10);
+        const timeStr = date.toTimeString().slice(0, 5);
+        form.querySelector('[name="event_date"]').value = dateStr;
+        form.querySelector('[name="event_time"]').value = timeStr;
+
+        editingId = id;
+        submitBtn.textContent = 'Update event';
+        cancelBtn.style.display = 'inline-block';
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      } catch (error) {
+        showMessage(`Error loading event: ${error.message}`, 'error');
+      }
+    };
+
+    window.deleteEvent = async function(id, title) {
+      if (!confirm(`Delete "${title}"?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/admin/events/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          showMessage('Event deleted.', 'success');
+          loadManualEvents();
+        } else {
+          const result = await response.json();
+          showMessage(result.error || 'Error deleting event', 'error');
+        }
+      } catch (error) {
+        showMessage(`Error: ${error.message}`, 'error');
+      }
+    };
+
+    cancelBtn.addEventListener('click', () => {
+      form.reset();
+      form.querySelector('[name="id"]').value = '';
+      editingId = null;
+      submitBtn.textContent = 'Save event';
+      cancelBtn.style.display = 'none';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      const id = data.id;
+      delete data.id;
+
+      if (data.event_date && data.event_time) {
+        data.date = `${data.event_date} ${data.event_time}:00`;
+        delete data.event_date;
+        delete data.event_time;
+      }
+
+      try {
+        const url = id ? `${API}/events/${id}` : `${API}/add_event`;
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showMessage(result.message, 'success');
+          form.reset();
+          form.querySelector('[name="id"]').value = '';
+          editingId = null;
+          submitBtn.textContent = 'Save event';
+          cancelBtn.style.display = 'none';
+          loadManualEvents();
+        } else {
+          showMessage(result.error || 'Something went wrong', 'error');
+        }
+      } catch (error) {
+        showMessage(`Network error: ${error.message}`, 'error');
+      }
+    });
+
+    function showMessage(text, type) {
+      messageDiv.innerHTML = `<div class="message ${type}">${type === 'success' ? '✅' : '❌'} ${text}</div>`;
+      setTimeout(() => {
+        messageDiv.innerHTML = '';
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
