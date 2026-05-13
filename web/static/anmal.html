@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit event</title>
+  <style>
+    body { font-family: sans-serif; font-size: 13px; max-width: 500px; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; }
+    h1 { font-size: 15px; margin-bottom: 0.5rem; }
+    .intro { color: #666; margin-bottom: 2rem; }
+    .field { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1.25rem; }
+    label { font-weight: bold; }
+    input, select, textarea { padding: 0.5rem; border: 1px solid #ccc; border-radius: 3px; font-size: 13px; font-family: inherit; }
+    textarea { min-height: 80px; resize: vertical; }
+    .hint { font-size: 11px; color: #999; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    button { padding: 0.6rem 1.5rem; background: #000; color: #fff; border: none; border-radius: 3px; font-size: 13px; cursor: pointer; }
+    button:disabled { opacity: 0.4; }
+    .success { padding: 2rem 0; }
+    .error { color: #dc2626; font-size: 12px; margin-top: 0.5rem; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <p><a href="/om">← About</a></p>
+
+  <div id="form-wrap">
+    <h1>Submit an event</h1>
+    <p class="intro">Missing something from the calendar? Submit it below and we'll review it.</p>
+
+    <form id="submitForm">
+      <div class="field">
+        <label>Title *</label>
+        <input type="text" name="title" required placeholder="e.g. Concert with X">
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Date *</label>
+          <input type="date" name="event_date" required>
+        </div>
+        <div class="field">
+          <label>Time</label>
+          <input type="time" name="event_time">
+          <span class="hint">Optional</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Venue *</label>
+        <input type="text" name="venue" required>
+      </div>
+      <div class="field">
+        <label>Category *</label>
+        <select name="category" required>
+          <option value="">— Select —</option>
+          <option>Film</option><option>Teater</option><option>Musikal</option>
+          <option>Opera</option><option>Dans</option><option>Musik</option>
+          <option>Standup</option><option>Klubb</option><option>Barn</option>
+          <option>Samtal</option><option>Poesi</option><option>Vernissage</option>
+          <option>Bildkonst</option><option>Övrigt</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Link</label>
+        <input type="url" name="link" placeholder="https://…">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea name="description"></textarea>
+      </div>
+      <div class="field">
+        <label>Your email</label>
+        <input type="email" name="contact_email">
+        <span class="hint">Only visible to us, never published (optional)</span>
+      </div>
+      <button type="submit" id="submitBtn">Submit</button>
+      <div class="error" id="error-msg" style="display:none"></div>
+    </form>
+  </div>
+
+  <div id="success-wrap" class="success" style="display:none">
+    <strong>Thank you!</strong>
+    <p>We'll review your submission and add it to the calendar if it fits.</p>
+    <p><a href="/">← Back to calendar</a></p>
+  </div>
+
+  <script>
+    // Prevent past dates in the date picker
+    document.querySelector('[name="event_date"]').min = new Date().toISOString().split('T')[0];
+
+    document.getElementById('submitForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const errEl = document.getElementById('error-msg');
+      btn.disabled = true;
+      const data = Object.fromEntries(new FormData(e.target).entries());
+      try {
+        const r = await fetch('/api/submit-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (r.ok) {
+          document.getElementById('form-wrap').style.display = 'none';
+          document.getElementById('success-wrap').style.display = 'block';
+        } else {
+          const d = await r.json();
+          errEl.textContent = d.error || 'Something went wrong.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+        }
+      } catch (err) {
+        errEl.textContent = 'Network error.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

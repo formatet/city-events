@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – kristall</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f5f5;
+      --surface: #fff;
+      --border: #e5e5e5;
+      --text: #111;
+      --muted: #888;
+      --accent: #111;
+      --ok: #16a34a;
+      --warn: #b45309;
+      --err: #dc2626;
+      --r: 5px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .admin-header {
+      background: var(--accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      height: 46px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .admin-logo { font-weight: 600; font-size: 14px; letter-spacing: 0.01em; }
+    .header-toggles { display: flex; gap: 0.5rem; align-items: center; }
+
+    .toggle-btn {
+      padding: 0.3rem 0.7rem;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: var(--r);
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .toggle-btn.on {
+      color: #fff;
+      border-color: rgba(255,255,255,0.7);
+    }
+    #pride-btn { font-size: 16px; padding: 0.25rem 0.5rem; }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-chip {
+      padding: 0.875rem 1.5rem;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-chip:last-child { border-right: none; }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-value.has-pending { color: var(--warn); }
+    .stat-value.has-stale   { color: var(--err); }
+    .stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Tabs ── */
+    .tab-nav {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.25rem;
+    }
+    .tab-btn {
+      padding: 0.7rem 1rem;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+      font-family: inherit;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+    .badge {
+      background: var(--warn);
+      color: #fff;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      line-height: 1.4;
+      display: none;
+    }
+    .badge.visible { display: inline-block; }
+
+    /* ── Content ── */
+    .tab-pane { display: none; padding: 1.5rem; max-width: 960px; }
+    .tab-pane.active { display: block; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 0.4rem 0.875rem;
+      border: 1px solid transparent;
+      border-radius: var(--r);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      line-height: 1.4;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.75; }
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-ghost    { background: #efefef; color: var(--text); border-color: var(--border); }
+    .btn-approve  { background: #dcfce7; color: #15803d; }
+    .btn-reject   { background: #fee2e2; color: #b91c1c; }
+    .btn-edit     { background: #f0f0f0; color: var(--text); }
+    .btn-delete   { background: #fee2e2; color: #b91c1c; }
+    .btn-sm       { padding: 0.3rem 0.625rem; font-size: 11px; }
+
+    /* ── Form ── */
+    .form-grid { display: flex; flex-direction: column; gap: 1.25rem; max-width: 560px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .field { display: flex; flex-direction: column; gap: 0.3rem; }
+    .field label { font-weight: 500; font-size: 12px; color: var(--text); }
+    .field input, .field select, .field textarea {
+      padding: 0.5rem 0.625rem;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      font-size: 13px;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none;
+      border-color: #999;
+    }
+    .field textarea { min-height: 90px; resize: vertical; }
+    .field-hint { font-size: 11px; color: var(--muted); }
+
+    /* ── Crystal swatches ── */
+    .swatch-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .swatch {
+      width: 1.75rem; height: 1.75rem;
+      border-radius: var(--r);
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: outline 0.1s;
+    }
+    .swatch.selected { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      border-bottom: 2px solid var(--border);
+    }
+    .data-table td {
+      padding: 0.625rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover td { background: var(--bg); }
+    .data-table .actions { display: flex; gap: 0.4rem; }
+
+    /* ── Pending cards ── */
+    .submissions-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .sub-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+      align-items: start;
+    }
+    .sub-title { font-size: 14px; font-weight: 600; margin-bottom: 0.25rem; }
+    .sub-meta { color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .sub-meta a { color: var(--muted); }
+    .sub-email { font-style: italic; }
+    .sub-actions { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; }
+
+    /* ── Highlight picker in pending cards ── */
+    .highlight-opts {
+      margin-top: 0.4rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .highlight-opts select {
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      font-size: 11px;
+      font-family: inherit;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .swatch-mini { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .swatch-mini .swatch { width: 1.35rem; height: 1.35rem; }
+    .highlight-opts-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── Log viewer ── */
+    .log-wrap {
+      background: #111;
+      color: #d4d4d4;
+      border-radius: var(--r);
+      padding: 1rem;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    .log-line { display: block; padding: 1px 0; border-bottom: 1px solid #1e1e1e; }
+    .log-line:last-child { border-bottom: none; }
+    .log-ts { color: #666; margin-right: 0.75rem; }
+    .log-submission  { color: #60a5fa; }
+    .log-approved  { color: #4ade80; }
+    .log-rejected  { color: #f87171; }
+    .log-email     { color: #a78bfa; }
+    .log-emailfail { color: #fb923c; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--r);
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 200;
+      animation: toast-in 0.2s ease;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .toast.ok  { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .toast.err { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    @keyframes toast-in { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+
+    /* ── Empty state ── */
+    .empty {
+      color: var(--muted);
+      padding: 2.5rem 0;
+      text-align: center;
+      font-size: 13px;
+    }
+    .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+    /* ── Health status dots ── */
+    .dot-ok   { color: var(--ok); }
+    .dot-warn { color: var(--warn); }
+    .dot-err  { color: var(--err); }
+    .row-stale td { background: #fffbeb !important; }
+
+    /* ── Section heading ── */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .section-title { font-size: 14px; font-weight: 600; }
+
+    /* ── Toast container ── */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end; }
+  </style>
+</head>
+<body>
+
+<header class="admin-header">
+  <span class="admin-logo">🔮 kristall / admin</span>
+  <div class="header-toggles">
+    <button id="wow-btn" class="toggle-btn" onclick="cycleWow()">WoW</button>
+    <button id="pride-btn" class="toggle-btn" onclick="cyclePride()">🪩</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-chip">
+    <span class="stat-value" id="stat-total">—</span>
+    <span class="stat-label">Kommande events</span>
+  </div>
+  <div class="stat-chip">
+    <span class="stat-value" id="stat-pending">—</span>
+    <span class="stat-label">Att granska</span>
+  </div>
+  <div class="stat-chip">
+    <span class="stat-value" id="stat-stale">—</span>
+    <span class="stat-label">Stale scrapers</span>
+  </div>
+</div>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="pending" onclick="showTab('pending')">
+    Väntande <span class="badge" id="pending-badge"></span>
+  </button>
+  <button class="tab-btn" data-tab="manual" onclick="showTab('manual')">Manuella</button>
+  <button class="tab-btn" data-tab="add" onclick="showTab('add')">Lägg till</button>
+  <button class="tab-btn" data-tab="health" onclick="showTab('health')">Hälsa</button>
+  <button class="tab-btn" data-tab="log" onclick="showTab('log')">Logg</button>
+</nav>
+
+<!-- ── TAB: Väntande ── -->
+<div class="tab-pane active" id="tab-pending">
+  <div class="section-header">
+    <span class="section-title">Inkomna anmälningar</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadPending()">Uppdatera</button>
+  </div>
+  <div id="pending-list"><p class="empty">Laddar…</p></div>
+</div>
+
+<!-- ── TAB: Manuella ── -->
+<div class="tab-pane" id="tab-manual">
+  <div class="section-header">
+    <span class="section-title">Manuella events</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadManualEvents()">Uppdatera</button>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="manual-table">
+      <thead>
+        <tr>
+          <th>Titel</th>
+          <th>Datum</th>
+          <th>Plats</th>
+          <th>Kategori</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="manual-tbody">
+        <tr><td colspan="5" class="empty">Laddar…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── TAB: Lägg till ── -->
+<div class="tab-pane" id="tab-add">
+  <div class="section-header">
+    <span class="section-title" id="form-heading">Nytt event</span>
+  </div>
+  <form id="eventForm" class="form-grid">
+    <div class="field">
+      <label>Titel *</label>
+      <input type="text" name="title" required placeholder="t.ex. The Cure">
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Datum *</label>
+        <input type="date" name="event_date" required>
+      </div>
+      <div class="field">
+        <label>Tid *</label>
+        <input type="time" name="event_time" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Plats *</label>
+      <input type="text" name="venue" required placeholder="t.ex. Stora Teatern">
+    </div>
+
+    <div class="field">
+      <label>Kategori *</label>
+      <select name="category" required>
+        <option value="">— Välj —</option>
+        <option value="Film">Film</option>
+        <option value="Teater">Teater</option>
+        <option value="Musikal">Musikal</option>
+        <option value="Opera">Opera</option>
+        <option value="Dans">Dans</option>
+        <option value="Musik">Musik</option>
+        <option value="Standup">Standup</option>
+        <option value="Klubb">Klubb</option>
+        <option value="Barn">Barn</option>
+        <option value="Samtal">Samtal</option>
+        <option value="Poesi">Poesi</option>
+        <option value="Vernissage">Vernissage</option>
+        <option value="Bildkonst">Bildkonst</option>
+        <option value="Övrigt">Övrigt</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Länk</label>
+      <input type="url" name="link" placeholder="https://…">
+    </div>
+
+    <div class="field">
+      <label>Källa</label>
+      <input type="text" name="source" placeholder="t.ex. Filmfestivalen">
+      <span class="field-hint">Var kommer eventet ifrån?</span>
+    </div>
+
+    <div class="field">
+      <label>Beskrivning</label>
+      <textarea name="description" placeholder="Extra info…"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Markering</label>
+      <select name="highlight">
+        <option value="">Ingen</option>
+        <option value="leftborder">Guldkant (vänster)</option>
+        <option value="background">Guldbakgrund</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Kristallfärg</label>
+      <div class="swatch-row" id="crystal-swatches">
+        <button type="button" class="swatch selected" data-color="" style="background:#f0f0f0;" title="Ingen">✕</button>
+        <button type="button" class="swatch" data-color="#bef2ff" style="background:#bef2ff;" title="Isblå"></button>
+        <button type="button" class="swatch" data-color="#a8d8f0" style="background:#a8d8f0;" title="Himmelblå"></button>
+        <button type="button" class="swatch" data-color="#c5f0e0" style="background:#c5f0e0;" title="Mint"></button>
+        <button type="button" class="swatch" data-color="#d4eaff" style="background:#d4eaff;" title="Lavendelblå"></button>
+        <button type="button" class="swatch" data-color="#e8d5f5" style="background:#e8d5f5;" title="Lila"></button>
+        <button type="button" class="swatch" data-color="#ffd6e0" style="background:#ffd6e0;" title="Rosa"></button>
+        <button type="button" class="swatch" data-color="#ffebc8" style="background:#ffebc8;" title="Guld"></button>
+        <button type="button" class="swatch" data-color="#d4f5c8" style="background:#d4f5c8;" title="Ljusgrön"></button>
+        <button type="button" class="swatch" data-color="#ffe8d6" style="background:#ffe8d6;" title="Persika"></button>
+        <button type="button" class="swatch" data-color="#f0f0f0" style="background:#f0f0f0;" title="Silver"></button>
+        <button type="button" class="swatch" data-color="#c8e8d0" style="background:#c8e8d0;" title="Salvia"></button>
+      </div>
+      <input type="hidden" name="crystal_color" value="">
+    </div>
+
+    <input type="hidden" name="id" value="">
+
+    <div style="display:flex;gap:0.75rem;">
+      <button type="submit" class="btn btn-primary" id="submitBtn">Spara event</button>
+      <button type="button" class="btn btn-ghost" id="cancelBtn" style="display:none">Avbryt</button>
+    </div>
+  </form>
+</div>
+
+<!-- ── TAB: Hälsa ── -->
+<div class="tab-pane" id="tab-health">
+  <div class="section-header">
+    <span class="section-title">Scraper-hälsa</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadHealth()">Uppdatera</button>
+  </div>
+  <p id="health-meta" style="color:var(--muted);font-size:12px;margin-bottom:1rem;"></p>
+  <div style="overflow-x:auto;">
+    <table class="data-table" id="health-table">
+      <thead>
+        <tr>
+          <th>Källa</th>
+          <th style="text-align:right">Kommande</th>
+          <th style="text-align:right">Hittade</th>
+          <th style="text-align:right">Exkl.</th>
+          <th>Senast uppdaterad</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="health-tbody">
+        <tr><td colspan="6" class="empty">Laddar…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── TAB: Logg ── -->
+<div class="tab-pane" id="tab-log">
+  <div class="section-header">
+    <span class="section-title">Anmälningslogg</span>
+    <button class="btn btn-ghost btn-sm" onclick="loadLog()">Uppdatera</button>
+  </div>
+  <div class="log-wrap" id="log-output"><span style="color:#555">Laddar…</span></div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+  const ADMIN_API = `${window.location.origin}/api/admin`;
+
+  // ── State ──────────────────────────────────────────────
+  let editingId = null;
+  let prideMode = 'off';
+  let wowMode = 'off';
+
+  // ── Init ───────────────────────────────────────────────
+  (async function init() {
+    await Promise.all([loadPrideState(), loadWowState()]);
+    loadStats();
+    loadPending();
+  })();
+
+  // ── Tabs ───────────────────────────────────────────────
+  function showTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.getElementById(`tab-${name}`).classList.add('active');
+
+    if (name === 'pending') loadPending();
+    else if (name === 'manual') loadManualEvents();
+    else if (name === 'health') loadHealth();
+    else if (name === 'log') loadLog();
+    else if (name === 'add') {
+      if (!editingId) resetForm();
+    }
+  }
+
+  // ── Stats bar ──────────────────────────────────────────
+  async function loadStats() {
+    const [healthRes, pendingRes] = await Promise.all([
+      fetch(`${ADMIN_API}/health`).catch(() => null),
+      fetch(`${ADMIN_API}/pending`).catch(() => null),
+    ]);
+
+    if (healthRes?.ok) {
+      const d = await healthRes.json();
+      document.getElementById('stat-total').textContent = d.total_upcoming ?? '—';
+      const stale = (d.sources || []).filter(s => s.status === 'stale').length;
+      const staleEl = document.getElementById('stat-stale');
+      staleEl.textContent = stale;
+      if (stale > 0) staleEl.classList.add('has-stale');
+    }
+
+    if (pendingRes?.ok) {
+      const pending = await pendingRes.json();
+      const count = Array.isArray(pending) ? pending.length : 0;
+      const el = document.getElementById('stat-pending');
+      el.textContent = count;
+      if (count > 0) el.classList.add('has-pending');
+      const badge = document.getElementById('pending-badge');
+      badge.textContent = count;
+      badge.classList.toggle('visible', count > 0);
+    }
+  }
+
+  // ── Pending submissions ────────────────────────────────
+  async function loadPending() {
+    const container = document.getElementById('pending-list');
+    container.innerHTML = '<p class="empty">Laddar…</p>';
+    try {
+      const r = await fetch(`${ADMIN_API}/pending`);
+      const items = await r.json();
+
+      if (!items.length) {
+        container.innerHTML = `<div class="empty"><div class="empty-icon">✓</div>Inga väntande anmälningar</div>`;
+        return;
+      }
+
+      const swatchColors = [
+        ['', '#f0f0f0', 'Ingen'],
+        ['#bef2ff','#bef2ff','Isblå'],['#a8d8f0','#a8d8f0','Himmelblå'],
+        ['#c5f0e0','#c5f0e0','Mint'],['#d4eaff','#d4eaff','Lavendelblå'],
+        ['#e8d5f5','#e8d5f5','Lila'],['#ffd6e0','#ffd6e0','Rosa'],
+        ['#ffebc8','#ffebc8','Guld'],['#d4f5c8','#d4f5c8','Ljusgrön'],
+        ['#ffe8d6','#ffe8d6','Persika'],['#c8e8d0','#c8e8d0','Salvia'],
+      ];
+
+      container.innerHTML = '<div class="submissions-list">' + items.map(s => {
+        const timeStr = s.event_time ? ` kl. ${s.event_time}` : '';
+        const linkHtml = s.link ? `<br><a href="${esc(s.link)}" target="_blank">${esc(s.link)}</a>` : '';
+        const descHtml = s.description ? `<br>${esc(s.description)}` : '';
+        const emailHtml = s.contact_email ? `<br><span class="sub-email">📧 ${esc(s.contact_email)}</span>` : '';
+        const submitted = new Date(s.submitted_at).toLocaleString('sv-SE');
+        const swatchHtml = swatchColors.map(([color, bg, label]) =>
+          `<button type="button" class="swatch${color===''?' selected':''}" data-color="${color}" style="background:${bg}" title="${label}"></button>`
+        ).join('');
+        return `
+          <div class="sub-card" id="sub-${s.id}">
+            <div>
+              <div class="sub-title">${esc(s.title)}</div>
+              <div class="sub-meta">
+                ${esc(s.event_date)}${timeStr} · ${esc(s.venue)} · ${esc(s.category)}
+                ${linkHtml}${descHtml}${emailHtml}
+                <br><span style="font-size:11px;color:#aaa;">Anmäld ${submitted}</span>
+              </div>
+            </div>
+            <div class="sub-actions">
+              <button class="btn btn-approve btn-sm" onclick="approveSubmission(${s.id}, this)">✓ Godkänn</button>
+              <button class="btn btn-reject btn-sm" onclick="rejectSubmission(${s.id})">✕ Avvisa</button>
+              <div class="highlight-opts">
+                <span class="highlight-opts-label">Markering (valfritt)</span>
+                <select class="h-sel">
+                  <option value="">Ingen</option>
+                  <option value="leftborder">Guldkant</option>
+                  <option value="background">Guldbakgrund</option>
+                </select>
+                <div class="swatch-mini">${swatchHtml}</div>
+                <input type="hidden" class="h-color" value="">
+              </div>
+            </div>
+          </div>`;
+      }).join('') + '</div>';
+
+      // Wire swatch clicks in pending cards
+      container.querySelectorAll('.sub-card').forEach(card => {
+        card.querySelectorAll('.swatch-mini .swatch').forEach(btn => {
+          btn.addEventListener('click', () => {
+            card.querySelectorAll('.swatch-mini .swatch').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            card.querySelector('.h-color').value = btn.dataset.color;
+          });
+        });
+      });
+    } catch (e) {
+      container.innerHTML = `<p class="empty" style="color:var(--err)">Fel: ${e.message}</p>`;
+    }
+  }
+
+  async function approveSubmission(id, btn) {
+    const card = document.getElementById(`sub-${id}`);
+    const highlight = card?.querySelector('.h-sel')?.value || '';
+    const crystal_color = card?.querySelector('.h-color')?.value || '';
+    const r = await fetch(`${ADMIN_API}/pending/${id}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ highlight: highlight || null, crystal_color: crystal_color || null }),
+    });
+    if (r.ok) {
+      toast('Event godkänt och tillagt ✓', 'ok');
+      card?.remove();
+      loadStats();
+      const list = document.getElementById('pending-list');
+      if (!list.querySelector('.sub-card')) {
+        list.innerHTML = `<div class="empty"><div class="empty-icon">✓</div>Inga väntande anmälningar</div>`;
+      }
+    } else {
+      const d = await r.json();
+      toast(d.error || 'Något gick fel', 'err');
+    }
+  }
+
+  async function rejectSubmission(id) {
+    if (!confirm('Avvisa och ta bort denna anmälan?')) return;
+    const r = await fetch(`${ADMIN_API}/pending/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      toast('Anmälan avvisad', 'ok');
+      document.getElementById(`sub-${id}`)?.remove();
+      loadStats();
+      const list = document.getElementById('pending-list');
+      if (!list.querySelector('.sub-card')) {
+        list.innerHTML = `<div class="empty"><div class="empty-icon">✓</div>Inga väntande anmälningar</div>`;
+      }
+    } else {
+      toast('Något gick fel', 'err');
+    }
+  }
+
+  // ── Manual events ──────────────────────────────────────
+  async function loadManualEvents() {
+    const tbody = document.getElementById('manual-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Laddar…</td></tr>';
+    try {
+      const r = await fetch(`${ADMIN_API}/events`);
+      const events = await r.json();
+
+      if (!events.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">Inga manuella events.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = events.map(ev => {
+        const d = new Date(ev.date);
+        const dateStr = d.toLocaleString('sv-SE', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+        return `<tr>
+          <td><strong>${esc(ev.title)}</strong></td>
+          <td style="white-space:nowrap;color:var(--muted)">${dateStr}</td>
+          <td>${esc(ev.venue)}</td>
+          <td>${esc(ev.category)}</td>
+          <td class="actions">
+            <button class="btn btn-edit btn-sm" onclick="editEvent(${ev.id})">Redigera</button>
+            <button class="btn btn-delete btn-sm" onclick="deleteEvent(${ev.id}, '${ev.title.replace(/'/g,"\\'")}')">Ta bort</button>
+          </td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="color:var(--err)">Fel: ${e.message}</td></tr>`;
+    }
+  }
+
+  window.editEvent = async function(id) {
+    try {
+      const r = await fetch(`${ADMIN_API}/events/${id}`);
+      const ev = await r.json();
+
+      const form = document.getElementById('eventForm');
+      form.querySelector('[name="title"]').value = ev.title;
+      form.querySelector('[name="venue"]').value = ev.venue;
+      form.querySelector('[name="category"]').value = ev.category;
+      form.querySelector('[name="link"]').value = ev.link || '';
+      form.querySelector('[name="source"]').value = ev.source || '';
+      form.querySelector('[name="description"]').value = ev.description || '';
+      form.querySelector('[name="highlight"]').value = ev.highlight || '';
+      form.querySelector('[name="id"]').value = ev.id;
+      setSwatchValue(ev.crystal_color || '');
+
+      const d = new Date(ev.date);
+      form.querySelector('[name="event_date"]').value = d.toISOString().slice(0, 10);
+      form.querySelector('[name="event_time"]').value = d.toTimeString().slice(0, 5);
+
+      editingId = id;
+      document.getElementById('form-heading').textContent = 'Redigera event';
+      document.getElementById('submitBtn').textContent = 'Uppdatera event';
+      document.getElementById('cancelBtn').style.display = 'inline-block';
+      showTab('add');
+    } catch (e) {
+      toast(`Fel: ${e.message}`, 'err');
+    }
+  };
+
+  window.deleteEvent = async function(id, title) {
+    if (!confirm(`Ta bort "${title}"?`)) return;
+    const r = await fetch(`${ADMIN_API}/events/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      toast('Event borttaget', 'ok');
+      loadManualEvents();
+    } else {
+      toast('Kunde inte ta bort', 'err');
+    }
+  };
+
+  document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+  document.getElementById('eventForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const data = Object.fromEntries(fd.entries());
+    const id = data.id; delete data.id;
+    if (data.event_date && data.event_time) {
+      data.date = `${data.event_date} ${data.event_time}:00`;
+      delete data.event_date; delete data.event_time;
+    }
+    try {
+      const url = id ? `${ADMIN_API}/events/${id}` : `${ADMIN_API}/add_event`;
+      const r = await fetch(url, {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await r.json();
+      if (r.ok) {
+        toast(result.message || 'Sparat!', 'ok');
+        resetForm();
+        loadStats();
+      } else {
+        toast(result.error || 'Något gick fel', 'err');
+      }
+    } catch (err) {
+      toast(`Nätverksfel: ${err.message}`, 'err');
+    }
+  });
+
+  function resetForm() {
+    document.getElementById('eventForm').reset();
+    document.querySelector('[name="id"]').value = '';
+    editingId = null;
+    document.getElementById('form-heading').textContent = 'Nytt event';
+    document.getElementById('submitBtn').textContent = 'Spara event';
+    document.getElementById('cancelBtn').style.display = 'none';
+    setSwatchValue('');
+  }
+
+  // ── Scraper health ─────────────────────────────────────
+  async function loadHealth() {
+    const tbody = document.getElementById('health-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Laddar…</td></tr>';
+    try {
+      const r = await fetch(`${ADMIN_API}/health`);
+      const d = await r.json();
+      const stale = (d.sources || []).filter(s => s.status === 'stale').length;
+      const statusText = stale > 0 ? `⚠ ${stale} stale` : '✓ Alla ok';
+      const runAt = d.run_at ? new Date(d.run_at).toLocaleString('sv-SE') : '—';
+      document.getElementById('health-meta').textContent =
+        `Kontrollerad: ${new Date(d.checked_at).toLocaleString('sv-SE')} · Senaste körning: ${runAt} · Totalt kommande: ${d.total_upcoming} · ${statusText}`;
+
+      const hasStats = d.sources.some(s => s.found !== undefined);
+      tbody.innerHTML = d.sources.map(s => {
+        const lu = s.last_updated ? new Date(s.last_updated).toLocaleString('sv-SE') : '—';
+        const ago = s.hours_ago < 24 ? `${s.hours_ago}h sedan` : `${Math.round(s.hours_ago/24)}d sedan`;
+        const dot = s.status === 'ok' ? '🟢' : s.status === 'empty' ? '🟡' : '🔴';
+
+        let exclTitle = '';
+        if (s.excl_detail) {
+          const parts = [];
+          if (s.excl_detail.cancelled) parts.push(`${s.excl_detail.cancelled} inställda`);
+          if (s.excl_detail.soldout)   parts.push(`${s.excl_detail.soldout} slutsålda`);
+          if (s.excl_detail.booked)    parts.push(`${s.excl_detail.booked} abonnerade`);
+          exclTitle = parts.join(', ');
+        }
+
+        return `<tr class="${s.status === 'stale' ? 'row-stale' : ''}">
+          <td>${s.source}</td>
+          <td style="text-align:right">${s.upcoming}</td>
+          <td style="text-align:right;color:var(--muted)">${hasStats ? (s.found ?? '—') : '—'}</td>
+          <td style="text-align:right;color:var(--muted)" title="${exclTitle}">${hasStats ? (s.excluded ?? '—') : '—'}</td>
+          <td style="color:var(--muted);white-space:nowrap">${lu}<br><span style="font-size:11px">${ago}</span></td>
+          <td>${dot} ${s.status}</td>
+        </tr>`;
+      }).join('');
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color:var(--err)">Fel: ${e.message}</td></tr>`;
+    }
+  }
+
+  // ── Swatches ───────────────────────────────────────────
+  document.getElementById('crystal-swatches').addEventListener('click', e => {
+    const btn = e.target.closest('.swatch');
+    if (!btn) return;
+    document.querySelectorAll('.swatch').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.querySelector('[name="crystal_color"]').value = btn.dataset.color;
+  });
+
+  function setSwatchValue(color) {
+    document.querySelectorAll('.swatch').forEach(b => {
+      b.classList.toggle('selected', b.dataset.color === (color || ''));
+    });
+    document.querySelector('[name="crystal_color"]').value = color || '';
+  }
+
+  // ── Pride / WoW ────────────────────────────────────────
+  async function loadPrideState() {
+    const r = await fetch('/api/pride').catch(() => null);
+    if (!r) return;
+    const d = await r.json();
+    prideMode = d.mode || 'off';
+    updatePrideBtn();
+  }
+
+  function updatePrideBtn() {
+    document.getElementById('pride-btn').classList.toggle('on', prideMode === 'pastel');
+  }
+
+  window.cyclePride = async function() {
+    prideMode = prideMode === 'off' ? 'pastel' : 'off';
+    updatePrideBtn();
+    await fetch('/api/admin/pride', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: prideMode }),
+    });
+  };
+
+  async function loadWowState() {
+    const r = await fetch('/api/wow').catch(() => null);
+    if (!r) return;
+    const d = await r.json();
+    wowMode = d.mode || 'off';
+    updateWowBtn();
+  }
+
+  function updateWowBtn() {
+    document.getElementById('wow-btn').classList.toggle('on', wowMode === 'on');
+  }
+
+  window.cycleWow = async function() {
+    wowMode = wowMode === 'off' ? 'on' : 'off';
+    updateWowBtn();
+    await fetch('/api/admin/wow', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: wowMode }),
+    });
+  };
+
+  // ── Log viewer ─────────────────────────────────────────
+  async function loadLog() {
+    const out = document.getElementById('log-output');
+    out.innerHTML = '<span style="color:#555">Laddar…</span>';
+    try {
+      const r = await fetch(`${ADMIN_API}/log`);
+      const d = await r.json();
+      if (!d.lines?.length) {
+        out.innerHTML = '<span style="color:#555">Ingen logg ännu.</span>';
+        return;
+      }
+      out.innerHTML = d.lines.map(line => {
+        const [ts, ...rest] = line.split('\t');
+        const body = rest.join('\t');
+        let cls = '';
+        if (body.startsWith('SUBMISSION_IN')) cls = 'log-submission';
+        else if (body.startsWith('APPROVED'))    cls = 'log-approved';
+        else if (body.startsWith('REJECTED'))    cls = 'log-rejected';
+        else if (body.startsWith('EMAIL_SENT'))  cls = 'log-email';
+        else if (body.startsWith('EMAIL_FAILED')) cls = 'log-emailfail';
+        return `<span class="log-line"><span class="log-ts">${esc(ts)}</span><span class="${cls}">${esc(body)}</span></span>`;
+      }).join('');
+    } catch (e) {
+      out.innerHTML = `<span style="color:#f87171">Fel: ${e.message}</span>`;
+    }
+  }
+
+  // ── Toast ──────────────────────────────────────────────
+  function toast(msg, type = 'ok') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  // ── Escape helper ──────────────────────────────────────
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
