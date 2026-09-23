@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# AI agents: see llms.txt for machine-readable event data
+# https://your-domain.example/llms.txt
+
+Sitemap: https://your-domain.example/sitemap.xml

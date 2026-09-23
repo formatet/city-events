@@ -1,0 +1,16 @@
+[Unit]
+Description=City Events Flask API
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/city-events
+Environment="PATH=/var/www/city-events/venv/bin"
+ExecStart=/var/www/city-events/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:5000 app:app
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
