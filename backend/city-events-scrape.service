@@ -1,0 +1,17 @@
+[Unit]
+Description=City Events Scraper
+After=network.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/city-events
+# Create /opt/city-events/.env with DB_HOST, DB_USER, DB_PASSWORD, DB_NAME
+EnvironmentFile=/opt/city-events/.env
+Environment="PATH=/opt/city-events/venv/bin"
+ExecStart=/opt/city-events/venv/bin/python3 /opt/city-events/scrape_all.py
+StandardOutput=append:/opt/city-events/logs/scrape_stdout.log
+StandardError=append:/opt/city-events/logs/scrape_stdout.log
+
+[Install]
+WantedBy=multi-user.target
